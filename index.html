@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -625,31 +626,30 @@ function exportImg() {
 }
 function downloadCSV() {
   const linhas = [];
-  CAM_ORDER.forEach(key => {
+  CAM_ORDER.forEach(function(key) {
     const m = META[key];
     if (!camadasAtivas.has(key) || !m.naTabela) return;
     if (blocoAtivo !== "todos" && m.bloco !== blocoAtivo) return;
     const cols = colunasReais(key);
-    (GJ[key]?.features || []).forEach(f => {
+    (GJ[key] && GJ[key].features ? GJ[key].features : []).forEach(function(f) {
       const p = f.properties, ano = +p.Ano_obra;
       if (m.temAno && !anosAtivos.has(ano)) return;
       const row = {camada: m.label};
-      cols.forEach(c => { row[c] = p[c] != null ? p[c] : ""; });
+      cols.forEach(function(c) { row[c] = p[c] != null ? p[c] : ""; });
       linhas.push(row);
     });
   });
   if (!linhas.length) return;
   const h = Object.keys(linhas[0]);
-  const sep = "
-";
   const rows = [h.join(",")];
-  linhas.forEach(l => {
-    rows.push(h.map(k => '"' + String(l[k] || "").replace(/"/g, '""') + '"').join(","));
+  linhas.forEach(function(l) {
+    rows.push(h.map(function(k) { return String(l[k] || "").replace(/,/g, " "); }).join(","));
   });
-  const blob = new Blob([rows.join(sep)], {type:"text/csv;charset=utf-8;"});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement("a");
-  a.href     = url;
+  const NL = String.fromCharCode(10);
+  const blob = new Blob([rows.join(NL)], {type: "text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
   a.download = "duplicacoes_rs_" + blocoAtivo + ".csv";
   a.click();
   URL.revokeObjectURL(url);
