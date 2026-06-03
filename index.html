@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -623,24 +624,35 @@ function exportImg() {
   });
 }
 function downloadCSV() {
-  const linhas=[];
-  CAM_ORDER.forEach(key=>{
-    const m=META[key];
-    if(!camadasAtivas.has(key)||!m.naTabela) return;
-    if(blocoAtivo!=="todos"&&m.bloco!==blocoAtivo) return;
-    (GJ[key]?.features||[]).forEach(f=>{
-      const p=f.properties,ano=+p.Ano_obra;
-      if(m.temAno&&!anosAtivos.has(ano)) return;
-      linhas.push({camada:m.label,...Object.fromEntries((COLS[key]||[]).map(c=>[c,p[c]??""]))});
+  const linhas = [];
+  CAM_ORDER.forEach(key => {
+    const m = META[key];
+    if (!camadasAtivas.has(key) || !m.naTabela) return;
+    if (blocoAtivo !== "todos" && m.bloco !== blocoAtivo) return;
+    const cols = colunasReais(key);
+    (GJ[key]?.features || []).forEach(f => {
+      const p = f.properties, ano = +p.Ano_obra;
+      if (m.temAno && !anosAtivos.has(ano)) return;
+      const row = {camada: m.label};
+      cols.forEach(c => { row[c] = p[c] != null ? p[c] : ""; });
+      linhas.push(row);
     });
   });
-  if(!linhas.length) return;
-  const h=Object.keys(linhas[0]);
-  const csv=[h.join(","),...linhas.map(l=>h.map(k=>`"${(l[k]||"").toString().replace(/"/g,'""')}"`).join(","))].join("
-");
-  const a=document.createElement("a");
-  a.href="data:text/csv;charset=utf-8,"+encodeURIComponent("﻿"+csv);
-  a.download=`duplicacoes_rs_${blocoAtivo}.csv`;a.click();
+  if (!linhas.length) return;
+  const h = Object.keys(linhas[0]);
+  const sep = "
+";
+  const rows = [h.join(",")];
+  linhas.forEach(l => {
+    rows.push(h.map(k => '"' + String(l[k] || "").replace(/"/g, '""') + '"').join(","));
+  });
+  const blob = new Blob([rows.join(sep)], {type:"text/csv;charset=utf-8;"});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = "duplicacoes_rs_" + blocoAtivo + ".csv";
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
